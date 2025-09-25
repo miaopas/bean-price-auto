@@ -1,0 +1,4 @@
+# Run bean-price update daily at 12:00 PM
+0 12 * * * root /app/run_bean_price.sh
+
+# Empty line required at end of cron file

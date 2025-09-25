@@ -1,0 +1,24 @@
+# Ignore git files
+.git
+.gitignore
+
+# Ignore logs and generated files
+logs/
+*.log
+
+# Ignore documentation
+README.md
+*.md
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# The ledger folder will be mounted, so we don't copy it during build
+ledger/
