@@ -9,8 +9,8 @@ CURRENT_YEAR=$(date '+%Y')
 # Create timestamp for logging
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
-# Log start
-echo "[$TIMESTAMP] Starting bean-price update for year $CURRENT_YEAR" >> /var/log/bean-price.log
+# Log start (both to file and stdout for container logs)
+echo "[$TIMESTAMP] Starting bean-price update for year $CURRENT_YEAR" | tee -a /var/log/bean-price.log
 
 # Create prices directory if it doesn't exist
 mkdir -p prices
@@ -18,16 +18,33 @@ mkdir -p prices
 # Define output filename with current year
 OUTPUT_FILE="prices/price-${CURRENT_YEAR}.bean"
 
-# Run bean-price command and save output to the year-specific price file
-bean-price -v main.bean -i -c --update > "$OUTPUT_FILE" 2>&1
+# Create temporary file for capturing errors
+TEMP_ERR=$(mktemp)
+
+# Run bean-price command - append to output file, capture errors separately
+bean-price main.bean -i -c --update >> "$OUTPUT_FILE" 2>"$TEMP_ERR"
+
+# Store exit code
+EXIT_CODE=$?
+
+# Check if there were any errors and log them
+if [ -s "$TEMP_ERR" ]; then
+    echo "[$TIMESTAMP] Errors encountered during bean-price execution:" | tee -a /var/log/bean-price.log
+    while IFS= read -r line; do
+        echo "[$TIMESTAMP] ERROR: $line" | tee -a /var/log/bean-price.log
+    done < "$TEMP_ERR"
+fi
+
+# Clean up temporary error file
+rm "$TEMP_ERR"
 
 # Check if command was successful
-if [ $? -eq 0 ]; then
-    echo "[$TIMESTAMP] bean-price update completed successfully" >> /var/log/bean-price.log
-    echo "[$TIMESTAMP] Output saved to /ledger/$OUTPUT_FILE" >> /var/log/bean-price.log
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "[$TIMESTAMP] bean-price update completed successfully" | tee -a /var/log/bean-price.log
+    echo "[$TIMESTAMP] Output appended to /ledger/$OUTPUT_FILE" | tee -a /var/log/bean-price.log
 else
-    echo "[$TIMESTAMP] bean-price update failed with exit code $?" >> /var/log/bean-price.log
+    echo "[$TIMESTAMP] bean-price update failed with exit code $EXIT_CODE" | tee -a /var/log/bean-price.log
 fi
 
 # Log completion
-echo "[$TIMESTAMP] bean-price script finished" >> /var/log/bean-price.log
+echo "[$TIMESTAMP] bean-price script finished" | tee -a /var/log/bean-price.log

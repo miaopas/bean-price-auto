@@ -1,16 +1,9 @@
-FROM python:3.12-slim
+FROM rei233/lazy-beancount:latest
 
-# Install cron and other necessary packages
-RUN apt-get update && apt-get install -y \
-    cron \
-    && rm -rf /var/lib/apt/lists/*
+# Switch to root user for package installation
+USER root
 
-# Install bean-price (adjust this based on how you install bean-price)
-# If bean-price is a Python package:
-RUN pip install beanprice
 
-# If you need to install from source or other method, adjust accordingly
-# RUN pip install git+https://github.com/beancount/beanprice.git
 
 # Create working directory
 WORKDIR /app
